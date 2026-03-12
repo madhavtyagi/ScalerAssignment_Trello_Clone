@@ -348,6 +348,19 @@ export default function HomePage() {
         {/* Main Content */}
         <main className="flex-1 min-w-0">
           <div className="max-w-[960px] mx-auto py-10 px-6 min-h-[calc(100vh-48px)]">
+            {/* Mobile view switcher */}
+            <div className="flex items-center gap-1 mb-4 lg:hidden bg-white rounded-lg border border-[#dfe1e6] p-1">
+              {([["boards", LayoutGrid, "Boards"], ["table", Table, "Table"], ["calendar", Calendar, "Calendar"]] as const).map(([mode, Icon, label]) => (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm rounded-md transition-colors ${viewMode === mode ? "bg-[#e9f2ff] text-[#0c66e4] font-semibold" : "text-[#5e6c84] hover:bg-[#091e420f]"}`}
+                >
+                  <Icon size={14} /> {label}
+                </button>
+              ))}
+            </div>
+
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded bg-gradient-to-br from-[#0079bf] to-[#5067c5] flex items-center justify-center text-lg font-bold text-white">
