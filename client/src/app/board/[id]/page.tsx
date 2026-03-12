@@ -119,6 +119,7 @@ export default function BoardPage() {
       {/* Board Content */}
       <BoardView
         board={board}
+        setBoard={setBoard}
         onRefresh={loadBoard}
         onCardClick={openCard}
       />

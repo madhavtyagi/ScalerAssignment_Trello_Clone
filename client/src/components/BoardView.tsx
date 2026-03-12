@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Dispatch, SetStateAction } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { Board, Card } from "@/types";
 import * as api from "@/lib/api";
@@ -9,17 +9,18 @@ import { Plus, X } from "lucide-react";
 
 interface BoardViewProps {
   board: Board;
+  setBoard: Dispatch<SetStateAction<Board | null>>;
   onRefresh: () => void;
   onCardClick: (card: Card) => void;
 }
 
-export default function BoardView({ board, onRefresh, onCardClick }: BoardViewProps) {
+export default function BoardView({ board, setBoard, onRefresh, onCardClick }: BoardViewProps) {
   const [addingList, setAddingList] = useState(false);
   const [newListTitle, setNewListTitle] = useState("");
 
   const lists = board.lists || [];
 
-  const handleDragEnd = async (result: DropResult) => {
+  const handleDragEnd = (result: DropResult) => {
     const { source, destination, type } = result;
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
@@ -29,17 +30,20 @@ export default function BoardView({ board, onRefresh, onCardClick }: BoardViewPr
       const [moved] = reordered.splice(source.index, 1);
       reordered.splice(destination.index, 0, moved);
 
-      const updates = reordered.map((list, idx) => ({
-        id: list.id,
+      const updatedLists = reordered.map((list, idx) => ({
+        ...list,
         position: (idx + 1) * 1024,
       }));
 
-      try {
-        await api.reorderLists(updates);
-        onRefresh();
-      } catch (err) {
+      // Optimistic update
+      setBoard((prev) => prev ? { ...prev, lists: updatedLists } : prev);
+
+      // Persist in background
+      const updates = updatedLists.map((l) => ({ id: l.id, position: l.position }));
+      api.reorderLists(updates).catch((err) => {
         console.error("Failed to reorder lists:", err);
-      }
+        onRefresh(); // Rollback on error
+      });
     } else if (type === "CARD") {
       const sourceListId = parseInt(source.droppableId);
       const destListId = parseInt(destination.droppableId);
@@ -50,41 +54,63 @@ export default function BoardView({ board, onRefresh, onCardClick }: BoardViewPr
       const sourceCards = Array.from(sourceList.cards);
       const [movedCard] = sourceCards.splice(source.index, 1);
 
+      let allUpdates: { id: number; listId: number; position: number }[];
+
       if (sourceListId === destListId) {
         sourceCards.splice(destination.index, 0, movedCard);
-        const updates = sourceCards.map((card, idx) => ({
-          id: card.id,
-          listId: sourceListId,
+        const updatedCards = sourceCards.map((card, idx) => ({
+          ...card,
           position: (idx + 1) * 1024,
         }));
-        try {
-          await api.reorderCards(updates);
-          onRefresh();
-        } catch (err) {
-          console.error("Failed to reorder cards:", err);
-        }
+
+        // Optimistic update
+        setBoard((prev) => {
+          if (!prev || !prev.lists) return prev;
+          return {
+            ...prev,
+            lists: prev.lists.map((l) =>
+              l.id === sourceListId ? { ...l, cards: updatedCards } : l
+            ),
+          };
+        });
+
+        allUpdates = updatedCards.map((c) => ({ id: c.id, listId: sourceListId, position: c.position }));
       } else {
         const destCards = Array.from(destList.cards);
         destCards.splice(destination.index, 0, { ...movedCard, listId: destListId });
-        const allUpdates = [
-          ...sourceCards.map((card, idx) => ({
-            id: card.id,
-            listId: sourceListId,
-            position: (idx + 1) * 1024,
-          })),
-          ...destCards.map((card, idx) => ({
-            id: card.id,
-            listId: destListId,
-            position: (idx + 1) * 1024,
-          })),
+
+        const updatedSourceCards = sourceCards.map((card, idx) => ({
+          ...card,
+          position: (idx + 1) * 1024,
+        }));
+        const updatedDestCards = destCards.map((card, idx) => ({
+          ...card,
+          position: (idx + 1) * 1024,
+        }));
+
+        // Optimistic update
+        setBoard((prev) => {
+          if (!prev || !prev.lists) return prev;
+          return {
+            ...prev,
+            lists: prev.lists.map((l) => {
+              if (l.id === sourceListId) return { ...l, cards: updatedSourceCards };
+              if (l.id === destListId) return { ...l, cards: updatedDestCards };
+              return l;
+            }),
+          };
+        });
+
+        allUpdates = [
+          ...updatedSourceCards.map((c) => ({ id: c.id, listId: sourceListId, position: c.position })),
+          ...updatedDestCards.map((c) => ({ id: c.id, listId: destListId, position: c.position })),
         ];
-        try {
-          await api.reorderCards(allUpdates);
-          onRefresh();
-        } catch (err) {
-          console.error("Failed to move card:", err);
-        }
       }
+
+      api.reorderCards(allUpdates).catch((err) => {
+        console.error("Failed to reorder cards:", err);
+        onRefresh(); // Rollback on error
+      });
     }
   };
 
