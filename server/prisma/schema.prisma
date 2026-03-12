@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Board {
+  id          Int      @id @default(autoincrement())
+  title       String
+  background  String   @default("#0079bf")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lists       List[]
+}
+
+model List {
+  id        Int      @id @default(autoincrement())
+  title     String
+  position  Float
+  boardId   Int
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  cards     Card[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Card {
+  id          Int             @id @default(autoincrement())
+  title       String
+  description String?
+  position    Float
+  dueDate     DateTime?
+  isArchived  Boolean         @default(false)
+  coverColor  String?
+  listId      Int
+  list        List            @relation(fields: [listId], references: [id], onDelete: Cascade)
+  labels      CardLabel[]
+  checklists  Checklist[]
+  members     CardMember[]
+  comments    Comment[]
+  attachments Attachment[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model Label {
+  id     Int         @id @default(autoincrement())
+  name   String?
+  color  String
+  cards  CardLabel[]
+}
+
+model CardLabel {
+  cardId  Int
+  labelId Int
+  card    Card  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  label   Label @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@id([cardId, labelId])
+}
+
+model Member {
+  id        Int          @id @default(autoincrement())
+  name      String
+  email     String       @unique
+  avatarUrl String?
+  cards     CardMember[]
+  comments  Comment[]
+}
+
+model CardMember {
+  cardId   Int
+  memberId Int
+  card     Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([cardId, memberId])
+}
+
+model Checklist {
+  id     Int             @id @default(autoincrement())
+  title  String
+  cardId Int
+  card   Card            @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  items  ChecklistItem[]
+}
+
+model ChecklistItem {
+  id          Int       @id @default(autoincrement())
+  text        String
+  isCompleted Boolean   @default(false)
+  checklistId Int
+  checklist   Checklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  text      String
+  cardId    Int
+  memberId  Int
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Attachment {
+  id        Int      @id @default(autoincrement())
+  name      String
+  url       String
+  cardId    Int
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
