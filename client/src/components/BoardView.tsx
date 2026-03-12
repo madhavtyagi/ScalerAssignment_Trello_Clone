@@ -141,7 +141,7 @@ export default function BoardView({ board, setBoard, onRefresh, onCardClick }: B
                   <div
                     ref={provided.innerRef}
                     {...provided.draggableProps}
-                    className={`shrink-0 ${snapshot.isDragging ? "opacity-95 rotate-[3deg] scale-[1.02] shadow-xl z-50" : "transition-transform duration-200"}`}
+                    className={`shrink-0 w-[85vw] sm:w-[272px] ${snapshot.isDragging ? "opacity-95 rotate-[3deg] scale-[1.02] shadow-xl z-50" : ""}`}
                   >
                     <ListColumn
                       list={list}

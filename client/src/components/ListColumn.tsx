@@ -61,7 +61,7 @@ export default function ListColumn({ list, onRefresh, onCardClick, dragHandlePro
   };
 
   return (
-    <div className="list-column w-[85vw] sm:w-[272px] bg-[#f1f2f4] rounded-xl flex flex-col max-h-[calc(100vh-150px)]">
+    <div className="list-column w-full bg-[#f1f2f4] rounded-xl flex flex-col max-h-[calc(100vh-150px)]">
       {/* List Header */}
       <div
         {...dragHandleProps}

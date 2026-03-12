@@ -114,13 +114,12 @@ body {
   opacity: 0.85;
 }
 
-/* Card hover elevation */
+/* Card hover elevation — no transform to avoid fighting with drag library */
 .card-item {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: box-shadow 0.2s ease;
 }
 
 .card-item:hover {
-  transform: translateY(-2px);
   box-shadow: 0 8px 16px -4px rgba(9, 30, 66, 0.25), 0 0 0 1px rgba(9, 30, 66, 0.08);
 }
 
