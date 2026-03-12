@@ -136,7 +136,7 @@ export default function ListColumn({ list, onRefresh, onCardClick, dragHandlePro
                     ref={provided.innerRef}
                     {...provided.draggableProps}
                     {...provided.dragHandleProps}
-                    className={`transition-transform duration-200 ${snapshot.isDragging ? "rotate-[4deg] opacity-95 scale-[1.02]" : ""}`}
+                    className={`${snapshot.isDragging ? "rotate-[4deg] opacity-95 scale-[1.02] shadow-lg z-50" : "transition-transform duration-200"}`}
                   >
                     <CardItem card={card} onClick={() => onCardClick(card)} />
                   </div>
